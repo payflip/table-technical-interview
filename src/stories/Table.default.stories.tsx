@@ -2,7 +2,7 @@ import React from 'react';
 import results from './test-results.json';
 import { ComponentStory, ComponentMeta } from '@storybook/react';
 
-import { Table, Column } from '../table';
+import { Table } from '../table';
 import { withTests } from '@storybook/addon-jest';
 
 export default {

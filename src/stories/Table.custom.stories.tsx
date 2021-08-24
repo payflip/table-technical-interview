@@ -1,6 +1,6 @@
 import React from 'react';
 import results from './test-results.json';
-import { ComponentStory, ComponentMeta, Story } from '@storybook/react';
+import { ComponentMeta, Story } from '@storybook/react';
 
 import { Table, Column } from '../table';
 import { withTests } from '@storybook/addon-jest';

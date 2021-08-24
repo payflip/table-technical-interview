@@ -1,5 +1,24 @@
-import { ColumnInfo } from './interfaces';
+import { ColumnInfo, IsColumnSortable } from './interfaces';
 import { Sort } from './Sort';
+import { useContext } from "react";
+import { TableContext } from "./context";
+
+const isColumnSortable = ({ sortable, comparator, tableIsSortable }: IsColumnSortable): boolean => {
+  // If we have comparator prop, that means the user wants to make custom sort logic,
+  // that's why we must show sort functionality
+  if (comparator) {
+    return true;
+  }
+
+  // default sortable value is UNDEFINED. If it isn't UNDEFINED, it means that the value
+  // was overwritten by <Column> prop
+  if (sortable !== undefined) {
+    return sortable;
+  }
+
+  // if we dont have custom <Column> sortable value we use <Table> sort configuration
+  return !!tableIsSortable;
+}
 
 export const HeadersRenderer = ({ columns }: { columns: ColumnInfo[] }) => {
   return (
@@ -11,7 +30,7 @@ export const HeadersRenderer = ({ columns }: { columns: ColumnInfo[] }) => {
               return headerRenderer({
                 header,
                 field,
-                sortable: sortable ?? false,
+                sortable,
                 comparator,
               });
             } else {
@@ -24,19 +43,24 @@ export const HeadersRenderer = ({ columns }: { columns: ColumnInfo[] }) => {
   );
 };
 
-export const DefaultHeaderRenderer = ({ header, field }: ColumnInfo) => {
+export const DefaultHeaderRenderer = (props: ColumnInfo) => {
+    const { header, field, sortable, comparator } = props;
+    const { tableIsSortable } = useContext(TableContext);
+
+    const isSortable: boolean = isColumnSortable({ sortable, comparator, tableIsSortable });
+
+    const sortIcons = isSortable && (
+      <Sort
+        columnKey={field}
+        comparator={comparator}
+      />
+    )
+
   return (
     <th key={`${field}${header}`}>
       <div>
         {header}
-        {
-          <Sort
-            columnKey={field}
-            onSort={(columnKey, order) => {
-              console.log(`Sort column ${columnKey} with order ${order}`);
-            }}
-          />
-        }
+        {sortIcons}
       </div>
     </th>
   );
