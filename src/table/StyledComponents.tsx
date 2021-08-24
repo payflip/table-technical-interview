@@ -45,3 +45,14 @@ export const StyledRow = styled.tr<{ borders?: boolean; selectable?: boolean }>`
       borders ? `1px solid ${Colors.$grey10}` : 'none'};
   }
 `;
+
+export const StyledButton = styled.button<{ selected?: boolean }>`
+  cursor: pointer;
+  border: none;
+  background: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  stroke: ${({ selected }) =>
+      selected ? Colors.$grey100 : Colors.$grey10
+}`;

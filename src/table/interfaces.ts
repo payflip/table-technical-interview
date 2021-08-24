@@ -1,3 +1,5 @@
+import { SORTING } from "../constants/sorting";
+
 export type ColumnInfo = {
   field: string;
   sortable?: boolean;
@@ -7,10 +9,8 @@ export type ColumnInfo = {
     record: Record<string, unknown>,
     index: number
   ) => JSX.Element;
-  headerRenderer?: (
-    columnInfo: Pick<ColumnInfo, 'field' | 'header' | 'sortable' | 'comparator'>
-  ) => JSX.Element;
   comparator?: SortComparatorFn;
+  headerRenderer?: (columnInfo: Pick<ColumnInfo, 'field' | 'header' | 'sortable' | 'comparator'>) => JSX.Element
 };
 
 export type SortComparatorFn = (
@@ -24,4 +24,10 @@ export type SortConfiguration = {
   comparator?: SortComparatorFn;
 };
 
-export type SortDirection = 'ASC' | 'DESC';
+export type SortDirection = SORTING.ASC | SORTING.DESC;
+
+export type IsColumnSortable = {
+  sortable?: boolean,
+  comparator?: SortComparatorFn
+  tableIsSortable?: boolean
+}

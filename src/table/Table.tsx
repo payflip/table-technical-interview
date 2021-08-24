@@ -1,11 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ColumnInfo, SortConfiguration } from './interfaces';
-import { SortContextRead, SortContextWrite, TableContext } from './context';
+import { SortContext, TableContext } from './context';
 import { HeadersRenderer } from './Header';
 import { BodyRenderer } from './Body';
 import { DefaultRowRenderer } from './Row';
 import { CustomColumnsSetUp, DefaultColumnsSetUp } from './Column';
 import { StyledTable } from './StyledComponents';
+import { SORTING } from "../constants/sorting";
 
 export type TableProps<TData = Record<string, unknown>[]> = {
   data: TData;
@@ -38,59 +39,100 @@ export type TableProps<TData = Record<string, unknown>[]> = {
 */
 
 export const Table: React.FC<TableProps> = ({
-  data = [],
-  children,
-  onRowClick,
-  className,
-  sortable,
-}) => {
-  const [columns, setColumns] = useState<ColumnInfo[]>([]);
-  const [initialized, setInitialized] = useState(false);
+      data = [],
+      children,
+      onRowClick,
+      className,
+      sortable,
+  }) => {
+    const [sortedData, setSortedData] = useState<Record<string, unknown>[]>(data);
+    const [columns, setColumns] = useState<ColumnInfo[]>([]);
+    const [initialized, setInitialized] = useState(false);
+    const [sortConfiguration, setSortConfiguration] = useState<SortConfiguration>({});
 
-  const addColumn = useCallback(
-    (columnInfo: ColumnInfo) => {
-      setColumns((columns) => [...columns, columnInfo]);
-    },
-    [setColumns]
-  );
+    useEffect(() => {
+      const {field, order, comparator} = sortConfiguration as SortConfiguration
 
-  //set-up phase
-  if (!initialized) {
-    if (children) {
-      return (
-        <TableContext.Provider
-          value={{
-            addColumn,
-            tableIsSortable: sortable,
-          }}
-        >
-          <CustomColumnsSetUp setInitialized={() => setInitialized(true)}>
-            {children}
-          </CustomColumnsSetUp>
-        </TableContext.Provider>
-      );
-    } else {
-      return (
-        <DefaultColumnsSetUp
-          data={data}
-          setColumns={setColumns}
-          initialized={initialized}
-          tableIsSortable={sortable ?? false}
-          setInitialized={() => setInitialized(true)}
-        />
-      );
-    }
+      if (field) {
+        const updatedData: TableProps["data"] = [...data].sort((a, b) => {
+          const valueA: any = a[field]
+          const valueB: any = b[field]
+
+          if (comparator) {
+            return comparator(valueA, valueB, order === SORTING.ASC)
+          }
+
+          if (valueA > valueB) {
+            return order === SORTING.ASC ? 1 : -1;
+          }
+          if (valueA < valueB) {
+            return order === SORTING.ASC ? -1 : 1;
+          }
+          return 0;
+        })
+
+        setSortedData(updatedData)
+      }
+    }, [sortConfiguration])
+
+    const addColumn = useCallback(
+      (columnInfo: ColumnInfo) => {
+        setColumns((columns) => [...columns, columnInfo]);
+      },
+      [setColumns]
+    );
+
+  const tableContextValue = {
+    addColumn,
+    tableIsSortable: sortable,
+  }
+  const sortContextValue = {
+    setSortConfiguration,
+    sortConfiguration
   }
 
-  //display
-  return (
-    <StyledTable className={className}>
-      <HeadersRenderer columns={columns} />
-      <BodyRenderer
-        data={data}
-        columns={columns}
-        rowRenderer={DefaultRowRenderer(onRowClick)}
-      />
-    </StyledTable>
-  );
+    //set-up phase
+    if (!initialized) {
+      if (children) {
+        return (
+          <TableContext.Provider
+            value={tableContextValue}
+          >
+            <CustomColumnsSetUp setInitialized={() => setInitialized(true)}>
+              {children}
+            </CustomColumnsSetUp>
+          </TableContext.Provider>
+        );
+      } else {
+        return (
+          <DefaultColumnsSetUp
+            data={sortedData}
+            setColumns={setColumns}
+            initialized={initialized}
+            tableIsSortable={sortable ?? false}
+            setInitialized={() => setInitialized(true)}
+          />
+        );
+      }
+    }
+
+    //display
+    return (
+      <TableContext.Provider
+        value={tableContextValue}
+      >
+        <SortContext.Provider
+          value={sortContextValue}
+        >
+          <StyledTable className={className}>
+            <HeadersRenderer columns={columns}/>
+            <BodyRenderer
+              data={sortedData}
+              columns={columns}
+              rowRenderer={DefaultRowRenderer(onRowClick)}
+            />
+          </StyledTable>
+        </SortContext.Provider>
+      </TableContext.Provider>
+    );
 };
